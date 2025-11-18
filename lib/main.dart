@@ -182,17 +182,17 @@ class _PerfumeListScreenState extends State<PerfumeListScreen> {
   Future<void> deletePerfume(String id) async {
     setState(() => isLoading = true);
     try {
-      final url = Uri.parse('$baseUrl/api/meusperfumes/${widget.rm}/$id');
-      final res = await http.delete(url);
-      if (res.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Excluído com sucesso')));
-        await fetchPerfumes();
-      } else {
+      final url = Uri.parse('$baseUrl/api/meusperfumes/${widget.rm}/$id'); //PEGA A URL BASE, PASSA O RM E O ID DO PERFUME QUE SERÁ DELETADO
+      final res = await http.delete(url); //PUXA A RESPOSTA DA API
+      if (res.statusCode == 200) {//EM CASO DE SUCESSO:
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Excluído com sucesso'))); // RETORNA EXCLUÍDO COM SUCESSO
+        await fetchPerfumes(); //FINALIZA A OPERAÇÃO
+      } else { //SE NÃO RETORNA O ERRO
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao excluir: ${res.statusCode}')),
         );
       }
-    } catch (e) {
+    } catch (e) { //RETORNA ERRO DE REDE
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro de rede: $e')));
     } finally {
       setState(() => isLoading = false);
@@ -200,7 +200,7 @@ class _PerfumeListScreenState extends State<PerfumeListScreen> {
   }
 
   void openAddForm() async {
-    final result = await Navigator.of(context).push<bool>(
+    final result = await Navigator.of(context).push<bool>( //manda para a tela perfumeformscreen 
       MaterialPageRoute(builder: (_) => PerfumeFormScreen(rm: widget.rm)),
     );
 
@@ -216,35 +216,35 @@ class _PerfumeListScreenState extends State<PerfumeListScreen> {
     await sp.remove('rm');
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const RmEntryScreen()));
   }
-
+//MONTA A TELA DE LISTA DE PERFUME
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Meus Perfumes — RM: ${widget.rm}'),
+        title: Text('Meus Perfumes — RM: ${widget.rm}'), //TRAZ O RM DIGITADO PELO USÁRIO
         actions: [
           IconButton(
-            tooltip: 'Mudar RM',
-            onPressed: _changeRm,
-            icon: const Icon(Icons.switch_account),
+            tooltip: 'Mudar RM', //BOTÃO DE MUDAR O RM
+            onPressed: _changeRm, //CHAMA A FUNCÇÃO QUE MANDA PARA A TELA DE CADASTRO DE RM
+            icon: const Icon(Icons.switch_account), //COLOCA UM ICONE 
           ),
           IconButton(
-            tooltip: 'Atualizar',
-            onPressed: fetchPerfumes,
-            icon: const Icon(Icons.refresh),
+            tooltip: 'Atualizar', //BOTÃO PARA DAR REFRESH NA LISTA
+            onPressed: fetchPerfumes, //CHAMA A FUNÇÃO DE ATUALIZAR
+            icon: const Icon(Icons.refresh), //COLOCA UM ICONE DE ATUALIZAÇÃO
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: openAddForm,
+        onPressed: openAddForm, //ADIONA O BOTÃO COM O ÍCONE DE + NO CANTO INFERIOR DIREITO DA TELA, AO CLICAR CHAMA A FUNÇÃO QUE ABRE O FORM DE PERFUME
         child: const Icon(Icons.add),
       ),
-      body: isLoading
+      body: isLoading // buscando perfumes
           ? const Center(child: CircularProgressIndicator())
           : perfumes.isEmpty
-              ? const Center(child: Text('Nenhum perfume cadastrado para este RM'))
-              : RefreshIndicator(
-                  onRefresh: fetchPerfumes,
+              ? const Center(child: Text('Nenhum perfume cadastrado para este RM')) // se for vazio, mostra o texto
+              : RefreshIndicator( //se nao for:
+                  onRefresh: fetchPerfumes, //mostra a lista
                   child: ListView.builder(
                     padding: const EdgeInsets.all(8),
                     itemCount: perfumes.length,
@@ -275,13 +275,13 @@ class _PerfumeListScreenState extends State<PerfumeListScreen> {
                           title: Text(p.nome, style: const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Text('ml: ${p.ml}'),
                           trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
+                            icon: const Icon(Icons.delete, color: Colors.red), //COMEÇANDO O DELETE
                             onPressed: () async {
                               final confirm = await showDialog<bool>(
                                 context: context,
                                 builder: (_) => AlertDialog(
-                                  title: const Text('Confirmar exclusão'),
-                                  content: Text('Excluir "${p.nome}" ?'),
+                                  title: const Text('Confirmar exclusão'), //AO PRESSIONAR ABRE UMA CAIXA PERGUNTANDO
+                                  content: Text('Excluir "${p.nome}" ?'), // EXLUIR -NOME DO PERFUME-
                                   actions: [
                                     TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
                                     ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Excluir')),
@@ -289,7 +289,7 @@ class _PerfumeListScreenState extends State<PerfumeListScreen> {
                                 ),
                               );
                               if (confirm == true) {
-                                await deletePerfume(p.id);
+                                await deletePerfume(p.id); // SE CONFIRMOU, CHAMA A DELETE PERFUME E PASSA O ID (ESSA FUNÇÃO TEM QUE ESTAR DENTRO DO LOOPING PARA P.ID FUNCIONAR)
                               }
                             },
                           ),
@@ -332,9 +332,11 @@ class _PerfumeFormScreenState extends State<PerfumeFormScreen> {
     });
   }
 
+//FUNÇÃO PARA SALVAR O PERFUME
   Future<void> _savePerfume() async {
     if (!_formKey.currentState!.validate()) return;
 
+//MONTA O OBJETO PERFUME
     final perfume = Perfume(
       id: '',
       rm: widget.rm,
@@ -343,28 +345,30 @@ class _PerfumeFormScreenState extends State<PerfumeFormScreen> {
       ml: _mlController.text.trim(),
     );
 
+//MANDA O OBJETO PARA API
     setState(() => _saving = true);
     try {
       final url = Uri.parse('$baseUrl/api/meusperfumes');
       final res = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(perfume.toJson()),
+        body: jsonEncode(perfume.toJson()), //PASSA O OBJETO PARA JSON
       );
 
-      if (res.statusCode == 200 || res.statusCode == 201) {
+      if (res.statusCode == 200 || res.statusCode == 201) { //SE SUCESSO, RETORNA A MENSAGEM:
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Perfume salvo com sucesso')));
         Navigator.of(context).pop(true); // retorna true indicando que salvou
-      } else {
+      } else { //SE NÃO, RETORNA O ERRO
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao salvar: ${res.statusCode}')));
       }
-    } catch (e) {
+    } catch (e) {//ERRO DE REDE
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro de rede: $e')));
     } finally {
       setState(() => _saving = false);
     }
   }
 
+//CONSTRUINDO O PREVIEW DA IMAGEM
   @override
   void dispose() {
     _imagemController.removeListener(_onImageChanged);
@@ -403,6 +407,7 @@ class _PerfumeFormScreenState extends State<PerfumeFormScreen> {
     );
   }
 
+// CONSTRUÇÃO DA TELA DE ADICIONAR PERFUME
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -457,8 +462,8 @@ class _PerfumeFormScreenState extends State<PerfumeFormScreen> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       icon: _saving ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save),
-                      label: Text(_saving ? 'Salvando...' : 'Salvar'),
-                      onPressed: _saving ? null : _savePerfume,
+                      label: Text(_saving ? 'Salvando...' : 'Salvar'),//BOTÃO DE SALVAR PERFUME
+                      onPressed: _saving ? null : _savePerfume, //CHAMA A FUNÇÃO DE SALVAR
                     ),
                   ),
                 ],
